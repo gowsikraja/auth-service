@@ -1,51 +1,48 @@
 version: 0.2
-# This buildspec two sources configured in CodePipeline:
-# 1. The primary source (this Spring Boot repo)
-# 2. A secondary source named "FlutterSource" (Flutter repo)
 
 phases:
   install:
     runtime-versions:
-      java: corretto21 # Or whatever Java version you use (corretto11, etc.)
+      java: corretto21
     commands:
-      # Install Flutter SDK
       - echo "Installing Flutter SDK..."
       - git clone --depth 1 --branch 3.27.1 https://github.com/flutter/flutter.git /tmp/flutter
       - export PATH="$PATH:/tmp/flutter/bin"
 
   pre_build:
     commands:
-      # Navigate to the Flutter source directory (the name must match your pipeline secondary source name)
+      # Navigating to the Flutter code directory.
+      # This works because your Flutter action name is "FlutterSource".
       - echo "Navigating to Flutter source directory located at $CODEBUILD_SRC_DIR_FlutterSource"
       - cd $CODEBUILD_SRC_DIR_FlutterSource
-      # Download Flutter dependencies
+      - pwd
       - echo "Getting Flutter dependencies..."
       - flutter pub get
 
   build:
     commands:
-      # Build the Flutter web application
+      # Build the Flutter web application from within its directory
       - echo "Building Flutter web app..."
       - flutter build web --base-href /home/
 
-      # Navigate back to the Spring Boot source directory (primary)
-      - echo "Navigating to Spring Boot source directory located at $CODEBUILD_SRC_DIR_Source" # Replace WebServiceRepoName with your primary source name
+      # Navigate to the Spring Boot code directory.
+      # This works because your Web Service action name is "Source".
+      - echo "Navigating to Spring Boot source directory located at $CODEBUILD_SRC_DIR_Source"
       - cd $CODEBUILD_SRC_DIR_Source
-
-      # Prepare the directory for the Flutter build output
+      - pwd
       - echo "Creating directory for Flutter build..."
       - mkdir -p src/main/resources/static/home
 
-      # Copy the built Flutter files into the Spring Boot project
+      # Copy the built Flutter files into the Spring Boot project.
+      # Note the full path to the Flutter build output.
       - echo "Copying Flutter build to Spring Boot static resources..."
       - cp -r $CODEBUILD_SRC_DIR_FlutterSource/build/web/* src/main/resources/static/home/
 
       # Build the Spring Boot application
       - echo "Building Spring Boot application..."
-      - ./mvnw package # Or ./gradlew build if you use Gradle
+      - ./mvnw package
 
 artifacts:
   files:
-    # Tell CodeBuild where to find the final JAR file to pass to the deploy stage
-    - target/*.jar # Or build/libs/*.jar for Gradle
+    - target/*.jar
   discard-paths: yes
