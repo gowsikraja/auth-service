@@ -1,0 +1,51 @@
+version: 0.2
+# This buildspec two sources configured in CodePipeline:
+# 1. The primary source (this Spring Boot repo)
+# 2. A secondary source named "FlutterSource" (Flutter repo)
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto21 # Or whatever Java version you use (corretto11, etc.)
+    commands:
+      # Install Flutter SDK
+      - echo "Installing Flutter SDK..."
+      - git clone --depth 1 --branch 3.27.1 https://github.com/flutter/flutter.git /tmp/flutter
+      - export PATH="$PATH:/tmp/flutter/bin"
+
+  pre_build:
+    commands:
+      # Navigate to the Flutter source directory (the name must match your pipeline secondary source name)
+      - echo "Navigating to Flutter source directory located at $CODEBUILD_SRC_DIR_FlutterSource"
+      - cd $CODEBUILD_SRC_DIR_FlutterSource
+      # Download Flutter dependencies
+      - echo "Getting Flutter dependencies..."
+      - flutter pub get
+
+  build:
+    commands:
+      # Build the Flutter web application
+      - echo "Building Flutter web app..."
+      - flutter build web --base-href /home/
+
+      # Navigate back to the Spring Boot source directory (primary)
+      - echo "Navigating to Spring Boot source directory located at $CODEBUILD_SRC_DIR_Source" # Replace WebServiceRepoName with your primary source name
+      - cd $CODEBUILD_SRC_DIR_Source
+
+      # Prepare the directory for the Flutter build output
+      - echo "Creating directory for Flutter build..."
+      - mkdir -p src/main/resources/static/home
+
+      # Copy the built Flutter files into the Spring Boot project
+      - echo "Copying Flutter build to Spring Boot static resources..."
+      - cp -r $CODEBUILD_SRC_DIR_FlutterSource/build/web/* src/main/resources/static/home/
+
+      # Build the Spring Boot application
+      - echo "Building Spring Boot application..."
+      - ./mvnw package # Or ./gradlew build if you use Gradle
+
+artifacts:
+  files:
+    # Tell CodeBuild where to find the final JAR file to pass to the deploy stage
+    - target/*.jar # Or build/libs/*.jar for Gradle
+  discard-paths: yes
