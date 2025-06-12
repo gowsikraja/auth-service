@@ -31,7 +31,7 @@ public class ForwardingController {
      * with the path variable might not catch these two specific cases depending
      * on the Spring version. Adding this ensures they are always handled.
      */
-    @RequestMapping(value = { "/home", "/home/" })
+    @RequestMapping(value = { "/home", "/home/", "/" })
     public String forwardBaseToHomeIndex() {
         return "forward:/home/index.html";
     }
