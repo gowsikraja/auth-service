@@ -4,42 +4,10 @@ phases:
   install:
     runtime-versions:
       java: corretto21
-    commands:
-      - echo "Installing Flutter SDK..."
-      - git clone --depth 1 --branch 3.27.1 https://github.com/flutter/flutter.git /tmp/flutter
-      - export PATH="$PATH:/tmp/flutter/bin"
-
-  pre_build:
-    commands:
-      # Navigating to the Flutter code directory.
-      # This works because your Flutter action name is "FlutterSource".
-      - echo "Navigating to Flutter source directory located at $CODEBUILD_SRC_DIR_FlutterSource"
-      - cd $CODEBUILD_SRC_DIR_FlutterSource
-      - pwd
-      - echo "Getting Flutter dependencies..."
-      - flutter pub get
-
+  
   build:
     commands:
-      # Build the Flutter web application from within its directory
-      - echo "Building Flutter web app..."
-      - flutter build web --base-href /home/
-
-      # Navigate to the Spring Boot code directory.
-      # This works because your Web Service action name is "Source".
-      - echo "Navigating to Spring Boot source directory located at $CODEBUILD_SRC_DIR_Source"
-      - cd $CODEBUILD_SRC_DIR_Source
-      - pwd
-      - echo "Creating directory for Flutter build..."
-      - mkdir -p src/main/resources/static/home
-
-      # Copy the built Flutter files into the Spring Boot project.
-      # Note the full path to the Flutter build output.
-      - echo "Copying Flutter build to Spring Boot static resources..."
-      - cp -r $CODEBUILD_SRC_DIR_FlutterSource/build/web/* src/main/resources/static/home/
-
-      # Build the Spring Boot application
-      - echo "Building Spring Boot application..."
+      - echo "Building the Spring Boot application..."
       - ./mvnw package
 
 artifacts:
